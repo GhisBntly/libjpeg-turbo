@@ -4,6 +4,8 @@ if(CMAKE_EXECUTABLE_SUFFIX)
   set(CMAKE_EXECUTABLE_SUFFIX_TMP ${CMAKE_EXECUTABLE_SUFFIX})
 endif()
 
+set(CMAKE_TRY_COMPILE_TARGET_TYPE "STATIC_LIBRARY")
+
 project(libjpeg-turbo C)
 set(VERSION 3.1.0)
 set(COPYRIGHT_YEAR "1991-2024")
@@ -68,7 +70,7 @@ endif()
 # complain that our install() directives for executables do not specify a
 # BUNDLE DESTINATION.  Even if CMake did not complain, building executables as
 # application bundles would break our iOS packages.)
-set(CMAKE_MACOSX_BUNDLE FALSE)
+#set(CMAKE_MACOSX_BUNDLE FALSE)
 
 get_property(GENERATOR_IS_MULTI_CONFIG GLOBAL PROPERTY
   GENERATOR_IS_MULTI_CONFIG)
@@ -96,7 +98,9 @@ include(cmakescripts/PackageInfo.cmake)
 
 # Detect CPU type and whether we're building 64-bit or 32-bit code
 math(EXPR BITS "${CMAKE_SIZEOF_VOID_P} * 8")
+if(CMAKE_SYSTEM_PROCESSOR)
 string(TOLOWER ${CMAKE_SYSTEM_PROCESSOR} CMAKE_SYSTEM_PROCESSOR_LC)
+endif()
 set(COUNT 1)
 foreach(ARCH ${CMAKE_OSX_ARCHITECTURES})
   if(COUNT GREATER 1)
@@ -679,9 +683,9 @@ if(ENABLE_STATIC)
   add_library(jpeg-static STATIC ${JPEG_SOURCES} ${SIMD_TARGET_OBJECTS}
     ${SIMD_OBJS} $<TARGET_OBJECTS:jpeg12-static>
     $<TARGET_OBJECTS:jpeg16-static>)
-  if(NOT MSVC_LIKE)
+  #if(NOT MSVC_LIKE)
     set_target_properties(jpeg-static PROPERTIES OUTPUT_NAME jpeg)
-  endif()
+  #endif()
 endif()
 
 if(WITH_TURBOJPEG)
@@ -734,27 +738,26 @@ if(WITH_TURBOJPEG)
         LINK_FLAGS "${TJMAPFLAG}${TJMAPFILE}")
     endif()
 
-    add_executable(tjunittest src/tjunittest.c src/tjutil.c src/md5/md5.c
-      src/md5/md5hl.c)
-    target_link_libraries(tjunittest turbojpeg)
+    #add_executable(tjunittest src/tjunittest.c src/tjutil.c src/md5/md5.c
+    #  src/md5/md5hl.c)
 
-    add_executable(tjbench src/tjbench.c src/tjutil.c)
-    target_link_libraries(tjbench turbojpeg)
-    if(UNIX)
-      target_link_libraries(tjbench m)
-    endif()
+    #add_executable(tjbench src/tjbench.c src/tjutil.c)
+    #target_link_libraries(tjbench turbojpeg)
+    #if(UNIX)
+    #  target_link_libraries(tjbench m)
+    #endif()
 
-    add_executable(tjcomp src/tjcomp.c)
-    target_link_libraries(tjcomp turbojpeg)
+    #add_executable(tjcomp src/tjcomp.c)
+    #target_link_libraries(tjcomp turbojpeg)
 
-    add_executable(tjdecomp src/tjdecomp.c)
-    target_link_libraries(tjdecomp turbojpeg)
+    #add_executable(tjdecomp src/tjdecomp.c)
+    #target_link_libraries(tjdecomp turbojpeg)
 
-    add_executable(tjtran src/tjtran.c)
-    target_link_libraries(tjtran turbojpeg)
+    #add_executable(tjtran src/tjtran.c)
+    #target_link_libraries(tjtran turbojpeg)
 
-    add_custom_target(tjdoc COMMAND doxygen -s ../doc/doxygen.config
-      WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/src)
+    #add_custom_target(tjdoc COMMAND doxygen -s ../doc/doxygen.config
+    #  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/src)
   endif()
 
   if(ENABLE_STATIC)
@@ -772,19 +775,20 @@ if(WITH_TURBOJPEG)
       $<TARGET_OBJECTS:turbojpeg16-static>)
     set_property(TARGET turbojpeg-static PROPERTY COMPILE_FLAGS
       "-DBMP_SUPPORTED -DPPM_SUPPORTED")
-    if(NOT MSVC_LIKE)
-      set_target_properties(turbojpeg-static PROPERTIES OUTPUT_NAME turbojpeg)
-    endif()
+    set_target_properties(turbojpeg-static PROPERTIES XCODE_ATTRIBUTE_ENABLE_BITCODE "YES")
+    #if(NOT MSVC_LIKE)
+    set_target_properties(turbojpeg-static PROPERTIES OUTPUT_NAME turbojpeg)
+    #endif()
 
-    add_executable(tjunittest-static src/tjunittest.c src/tjutil.c
-      src/md5/md5.c src/md5/md5hl.c)
-    target_link_libraries(tjunittest-static turbojpeg-static)
+    #add_executable(tjunittest-static src/tjunittest.c src/tjutil.c
+    #  src/md5/md5.c src/md5/md5hl.c)
+    #target_link_libraries(tjunittest-static turbojpeg-static)
 
-    add_executable(tjbench-static src/tjbench.c src/tjutil.c)
-    target_link_libraries(tjbench-static turbojpeg-static)
-    if(UNIX)
-      target_link_libraries(tjbench-static m)
-    endif()
+    #add_executable(tjbench-static src/tjbench.c src/tjutil.c)
+    #target_link_libraries(tjbench-static turbojpeg-static)
+    #if(UNIX)
+    #  target_link_libraries(tjbench-static m)
+    #endif()
   endif()
 endif()
 
@@ -794,49 +798,43 @@ endif()
 set(CDJPEG_COMPILE_FLAGS
   "-DBMP_SUPPORTED -DGIF_SUPPORTED -DPPM_SUPPORTED -DTARGA_SUPPORTED ${USE_SETMODE}")
 
-if(ENABLE_STATIC)
+#if(ENABLE_STATIC)
   # Compile a separate version of these source files with 12-bit and 16-bit
   # data precision.
-  add_library(cjpeg12-static OBJECT src/rdppm.c)
-  set_property(TARGET cjpeg12-static PROPERTY COMPILE_FLAGS
-    "-DBITS_IN_JSAMPLE=12 -DGIF_SUPPORTED -DPPM_SUPPORTED")
-  add_library(cjpeg16-static OBJECT src/rdppm.c)
-  set_property(TARGET cjpeg16-static PROPERTY COMPILE_FLAGS
-    "-DBITS_IN_JSAMPLE=16 -DGIF_SUPPORTED -DPPM_SUPPORTED")
-  add_executable(cjpeg-static src/cjpeg.c src/cdjpeg.c src/rdbmp.c src/rdgif.c
-    src/rdppm.c src/rdswitch.c src/rdtarga.c $<TARGET_OBJECTS:cjpeg12-static>
-    $<TARGET_OBJECTS:cjpeg16-static>)
-  set_property(TARGET cjpeg-static PROPERTY COMPILE_FLAGS
-    ${CDJPEG_COMPILE_FLAGS})
-  target_link_libraries(cjpeg-static jpeg-static)
+  #add_library(cjpeg12-static OBJECT src/rdppm.c)
+  #set_property(TARGET cjpeg12-static PROPERTY COMPILE_FLAGS
+  #  "-DBITS_IN_JSAMPLE=12 -DGIF_SUPPORTED -DPPM_SUPPORTED")
+  #add_library(cjpeg16-static OBJECT src/rdppm.c)
+  #set_property(TARGET cjpeg16-static PROPERTY COMPILE_FLAGS
+  #  "-DBITS_IN_JSAMPLE=16 -DGIF_SUPPORTED -DPPM_SUPPORTED")
+  #add_executable(cjpeg-static src/cjpeg.c src/cdjpeg.c src/rdbmp.c src/rdgif.c
+  #  src/rdppm.c src/rdswitch.c src/rdtarga.c $<TARGET_OBJECTS:cjpeg12-static>
+  #  $<TARGET_OBJECTS:cjpeg16-static>)
+  #set_property(TARGET cjpeg-static PROPERTY COMPILE_FLAGS
+  #  ${CDJPEG_COMPILE_FLAGS})
 
   # Compile a separate version of these source files with 12-bit and 16-bit
   # data precision.
-  add_library(djpeg12-static OBJECT src/rdcolmap.c src/wrgif.c src/wrppm.c)
-  set_property(TARGET djpeg12-static PROPERTY COMPILE_FLAGS
-    "-DBITS_IN_JSAMPLE=12 -DGIF_SUPPORTED -DPPM_SUPPORTED")
-  add_library(djpeg16-static OBJECT src/wrppm.c)
-  set_property(TARGET djpeg16-static PROPERTY COMPILE_FLAGS
-    "-DBITS_IN_JSAMPLE=16 -DPPM_SUPPORTED")
-  add_executable(djpeg-static src/djpeg.c src/cdjpeg.c src/rdcolmap.c
-    src/rdswitch.c src/wrbmp.c src/wrgif.c src/wrppm.c src/wrtarga.c
-    $<TARGET_OBJECTS:djpeg12-static> $<TARGET_OBJECTS:djpeg16-static>)
-  set_property(TARGET djpeg-static PROPERTY COMPILE_FLAGS
-    ${CDJPEG_COMPILE_FLAGS})
-  target_link_libraries(djpeg-static jpeg-static)
+  #add_library(djpeg12-static OBJECT src/rdcolmap.c src/wrgif.c src/wrppm.c)
+  #set_property(TARGET djpeg12-static PROPERTY COMPILE_FLAGS
+  #  "-DBITS_IN_JSAMPLE=12 -DGIF_SUPPORTED -DPPM_SUPPORTED")
+  #add_library(djpeg16-static OBJECT src/wrppm.c)
+  #set_property(TARGET djpeg16-static PROPERTY COMPILE_FLAGS
+  #  "-DBITS_IN_JSAMPLE=16 -DPPM_SUPPORTED")
+  #add_executable(djpeg-static src/djpeg.c src/cdjpeg.c src/rdcolmap.c
+  #  src/rdswitch.c src/wrbmp.c src/wrgif.c src/wrppm.c src/wrtarga.c
+  #  $<TARGET_OBJECTS:djpeg12-static> $<TARGET_OBJECTS:djpeg16-static>)
+  #set_property(TARGET djpeg-static PROPERTY COMPILE_FLAGS
+  #  ${CDJPEG_COMPILE_FLAGS})
+  #add_executable(jpegtran-static src/jpegtran.c src/cdjpeg.c src/rdswitch.c
+  #  src/transupp.c)
 
-  add_executable(jpegtran-static src/jpegtran.c src/cdjpeg.c src/rdswitch.c
-    src/transupp.c)
-  target_link_libraries(jpegtran-static jpeg-static)
-  set_property(TARGET jpegtran-static PROPERTY COMPILE_FLAGS "${USE_SETMODE}")
+  #add_executable(example-static src/example.c)
+  #target_link_libraries(example-static jpeg-static)
+#endif()
+#add_executable(rdjpgcom src/rdjpgcom.c)
 
-  add_executable(example-static src/example.c)
-  target_link_libraries(example-static jpeg-static)
-endif()
-
-add_executable(rdjpgcom src/rdjpgcom.c)
-
-add_executable(wrjpgcom src/wrjpgcom.c)
+#add_executable(wrjpgcom src/wrjpgcom.c)
 
 
 ###############################################################################
@@ -847,7 +845,7 @@ if(WITH_FUZZ)
   add_subdirectory(fuzz)
 endif()
 
-add_executable(strtest src/strtest.c)
+#add_executable(strtest src/strtest.c)
 
 add_subdirectory(src/md5)
 
@@ -1963,7 +1961,7 @@ endif()
 # INSTALLATION
 ###############################################################################
 
-set(EXE ${CMAKE_EXECUTABLE_SUFFIX})
+#set(EXE ${CMAKE_EXECUTABLE_SUFFIX})
 
 if(WITH_TURBOJPEG)
   if(ENABLE_SHARED)
@@ -1972,8 +1970,8 @@ if(WITH_TURBOJPEG)
       ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR} COMPONENT lib
       LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR} COMPONENT lib
       RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT bin)
-    install(TARGETS tjbench
-      RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT bin)
+    #install(TARGETS tjbench
+    #  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT bin)
     if(NOT CMAKE_VERSION VERSION_LESS "3.1" AND MSVC_LIKE AND
       CMAKE_C_LINKER_SUPPORTS_PDB)
       install(FILES "$<TARGET_PDB_FILE:turbojpeg>"
@@ -1990,88 +1988,11 @@ if(WITH_TURBOJPEG)
       else()
         set(DIR ${CMAKE_CURRENT_BINARY_DIR})
       endif()
-      install(PROGRAMS ${DIR}/tjbench-static${EXE}
-        DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT bin RENAME tjbench${EXE})
+      #install(PROGRAMS ${DIR}/tjbench-static${EXE}
+      #  DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT bin RENAME tjbench${EXE})
     endif()
   endif()
   install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/src/turbojpeg.h
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR} COMPONENT include)
 endif()
 
-if(ENABLE_STATIC)
-  install(TARGETS jpeg-static EXPORT ${CMAKE_PROJECT_NAME}Targets
-    INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
-    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR} COMPONENT lib)
-  if(NOT ENABLE_SHARED)
-    if(GENERATOR_IS_MULTI_CONFIG)
-      set(DIR "${CMAKE_CURRENT_BINARY_DIR}/\${CMAKE_INSTALL_CONFIG_NAME}")
-    else()
-      set(DIR ${CMAKE_CURRENT_BINARY_DIR})
-    endif()
-    install(PROGRAMS ${DIR}/cjpeg-static${EXE}
-      DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT bin RENAME cjpeg${EXE})
-    install(PROGRAMS ${DIR}/djpeg-static${EXE}
-      DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT bin RENAME djpeg${EXE})
-    install(PROGRAMS ${DIR}/jpegtran-static${EXE}
-      DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT bin RENAME jpegtran${EXE})
-  endif()
-endif()
-
-install(TARGETS rdjpgcom wrjpgcom
-  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR} COMPONENT bin)
-
-install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/README.ijg
-  ${CMAKE_CURRENT_SOURCE_DIR}/README.md
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/example.c
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/tjcomp.c
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/tjdecomp.c
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/tjtran.c
-  ${CMAKE_CURRENT_SOURCE_DIR}/doc/libjpeg.txt
-  ${CMAKE_CURRENT_SOURCE_DIR}/doc/structure.txt
-  ${CMAKE_CURRENT_SOURCE_DIR}/doc/usage.txt
-  ${CMAKE_CURRENT_SOURCE_DIR}/doc/wizard.txt
-  ${CMAKE_CURRENT_SOURCE_DIR}/LICENSE.md DESTINATION ${CMAKE_INSTALL_DOCDIR}
-  COMPONENT doc)
-if(WITH_JAVA)
-  install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/java/TJComp.java
-    ${CMAKE_CURRENT_SOURCE_DIR}/java/TJDecomp.java
-    ${CMAKE_CURRENT_SOURCE_DIR}/java/TJTran.java
-    DESTINATION ${CMAKE_INSTALL_DOCDIR} COMPONENT doc)
-endif()
-
-if(UNIX OR MINGW)
-  install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/doc/cjpeg.1
-    ${CMAKE_CURRENT_SOURCE_DIR}/doc/djpeg.1
-    ${CMAKE_CURRENT_SOURCE_DIR}/doc/jpegtran.1
-    ${CMAKE_CURRENT_SOURCE_DIR}/doc/rdjpgcom.1
-    ${CMAKE_CURRENT_SOURCE_DIR}/doc/wrjpgcom.1
-    DESTINATION ${CMAKE_INSTALL_MANDIR}/man1 COMPONENT man)
-endif()
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/pkgscripts/libjpeg.pc
-  DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig COMPONENT lib)
-if(WITH_TURBOJPEG)
-  install(FILES ${CMAKE_CURRENT_BINARY_DIR}/pkgscripts/libturbojpeg.pc
-    DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig COMPONENT lib)
-endif()
-install(FILES
-  ${CMAKE_CURRENT_BINARY_DIR}/pkgscripts/${CMAKE_PROJECT_NAME}Config.cmake
-  ${CMAKE_CURRENT_BINARY_DIR}/pkgscripts/${CMAKE_PROJECT_NAME}ConfigVersion.cmake
-  DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${CMAKE_PROJECT_NAME}
-  COMPONENT lib)
-install(EXPORT ${CMAKE_PROJECT_NAME}Targets
-  NAMESPACE ${CMAKE_PROJECT_NAME}::
-  DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/${CMAKE_PROJECT_NAME}
-  COMPONENT lib)
-
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/jconfig.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/jerror.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/jmorecfg.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/jpeglib.h
-  DESTINATION ${CMAKE_INSTALL_INCLUDEDIR} COMPONENT include)
-
-include(cmakescripts/BuildPackages.cmake)
-
-configure_file("${CMAKE_CURRENT_SOURCE_DIR}/cmakescripts/cmake_uninstall.cmake.in"
-  "cmake_uninstall.cmake" IMMEDIATE @ONLY)
-
-add_custom_target(uninstall COMMAND ${CMAKE_COMMAND} -P cmake_uninstall.cmake)
